@@ -1,0 +1,7 @@
+venv/
+lineart/models/
+*.onnx
+*.png
+*.jpg
+*.svg
+__pycache__/

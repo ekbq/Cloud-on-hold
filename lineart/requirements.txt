@@ -1,0 +1,11 @@
+numpy
+pillow
+opencv-python-headless
+onnxruntime
+rembg[cpu]
+potracer
+torch
+diffusers
+transformers
+accelerate
+safetensors
