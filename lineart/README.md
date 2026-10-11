@@ -27,6 +27,16 @@ python -m venv venv && ./venv/bin/pip install -r requirements.txt
 
 On a 4-core CPU, `sdcn2.py` takes about 2.5-4.5 minutes per image at 768px. A GPU is much faster.
 
+## Mac / GPU
+
+`device.py` picks CUDA, then Apple Silicon (MPS), then CPU, using fp16 on GPU. Override with
+`LINEART_DEVICE=cpu|mps|cuda`; `LINEART_STEPS=n` overrides the step count.
+
+`sdxl.py` is the SDXL version (SDXL base + `ShermanG/ControlNet-Standard-Lineart-for-SDXL` + the
+fp16-fixed VAE). Same usage as `sdcn3.py`, writes `sdxl_<tag>_*`. Needs a GPU and roughly 10 GB for
+the fp16 models, so on a 16 GB Mac close other apps first. **Not yet run anywhere** - it was written
+in a CPU-only container that can't fit SDXL.
+
 ## Status
 
 `sdcn3.py` = `sdcn2.py` + coloring-book LoRA + subject prompt + Otsu binarize + potrace SVG.
