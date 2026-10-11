@@ -29,6 +29,12 @@ On a 4-core CPU, `sdcn2.py` takes about 2.5-4.5 minutes per image at 768px. A GP
 
 ## Status
 
-People photos: strength 0.5 is close to marcam and keeps expressions better, but it is greyer and
-messier on textured clothing. Cats: still clearly behind marcam. The SD output is not yet
-thresholded and traced to SVG.
+`sdcn3.py` = `sdcn2.py` + coloring-book LoRA + subject prompt + Otsu binarize + potrace SVG.
+Usage: `python sdcn3.py photo.jpg:people_tag:"short description of the subject"`.
+
+- People: pure black/white SVG, close to marcam in look. Weaker: hair less solid, stray fleece strokes,
+  the right girl's wink reads as two closed eyes after binarizing.
+- Cats: recognisable but behind marcam (blanket lost to the cutout, blotchy fur).
+- The SD1.5 LoRA changed only ~6% of pixels at strength 0.5; the start drawing and ControlNet dominate.
+  A stronger base (SDXL + line-art ControlNet) needs a GPU.
+- Peak RAM is high on CPU: cutout models are freed before SD loads to avoid OOM kills on 15 GB.
