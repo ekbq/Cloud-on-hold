@@ -3,7 +3,7 @@
 Usage: python sdcn3.py photo.jpg:tag:"short subject description" [...]
 Expects <tag>_v3.png from v3.py as the starting drawing.
 """
-import sys, time
+import gc, sys, time
 import numpy as np, torch, cv2
 from PIL import Image
 from diffusers import ControlNetModel, StableDiffusionControlNetImg2ImgPipeline, UniPCMultistepScheduler
@@ -32,6 +32,19 @@ def finish(img, mask, out):
 
 
 if __name__ == "__main__":
+    # cutouts first, then free the rembg models: holding them alongside SD gets the process OOM-killed
+    jobs = []
+    sessions = [new_session("birefnet-general"), new_session("isnet-general-use")]
+    for arg in sys.argv[1:]:
+        src, tag, subject = arg.split(":", 2)
+        im = L.load(src)
+        s = 768 / max(im.size)
+        w, h = round(im.width * s / 8) * 8, round(im.height * s / 8) * 8
+        im = im.resize((w, h), Image.LANCZOS)
+        jobs.append((tag, subject, im, w, h, L.subject_mask(im, sessions[0]) | L.subject_mask(im, sessions[1])))
+    del sessions
+    gc.collect()
+
     torch.set_num_threads(4)
     cn = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_lineart", torch_dtype=torch.float32)
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
@@ -41,15 +54,8 @@ if __name__ == "__main__":
     pipe.load_lora_weights(LORA_REPO, weight_name=LORA_FILE)
     pipe.fuse_lora(lora_scale=LORA_SCALE)
     pipe.set_progress_bar_config(disable=True)
-    sessions = [new_session("birefnet-general"), new_session("isnet-general-use")]
 
-    for arg in sys.argv[1:]:
-        src, tag, subject = arg.split(":", 2)
-        im = L.load(src)
-        s = 768 / max(im.size)
-        w, h = round(im.width * s / 8) * 8, round(im.height * s / 8) * 8
-        im = im.resize((w, h), Image.LANCZOS)
-        mask = L.subject_mask(im, sessions[0]) | L.subject_mask(im, sessions[1])
+    for tag, subject, im, w, h, mask in jobs:
         sk = idraw.run("models/rocca_lineart.onnx", im)
         ctrl = ((1 - sk) * 255).astype(np.uint8)
         ctrl[mask == 0] = 0
