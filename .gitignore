@@ -5,3 +5,5 @@ lineart/models/
 *.jpg
 *.svg
 __pycache__/
+# test fixtures are tracked
+!lineart/testdata/**
